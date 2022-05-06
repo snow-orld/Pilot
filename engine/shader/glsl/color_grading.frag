@@ -1,4 +1,4 @@
-#version 310 es
+    #version 310 es
 
 #extension GL_GOOGLE_include_directive : enable
 
@@ -15,9 +15,19 @@ void main()
     highp ivec2 lut_tex_size = textureSize(color_grading_lut_texture_sampler, 0);
     highp float _COLORS      = float(lut_tex_size.y);
 
-    highp vec4 color       = subpassLoad(in_color).rgba;
+    highp vec4 color         = subpassLoad(in_color).rgba;
     
-    // texture(color_grading_lut_texture_sampler, uv)
+    highp float max_color = _COLORS - 1.0;
+    highp float half_color_x = 0.5 / float(lut_tex_size.x);
+    highp float half_color_y = 0.5 / float(lut_tex_size.y);
+    highp float threshold = max_color / _COLORS;
 
-    out_color = color;
+    highp float x_offset = half_color_x + color.r * threshold / _COLORS;
+    highp float y_offset = half_color_y + color.g * threshold;
+    highp float cell = floor(color.b * max_color) / _COLORS;
+
+    highp vec2 uv            =  vec2(x_offset + cell, y_offset);
+    highp vec4 color_sampled = texture(color_grading_lut_texture_sampler, uv);
+
+    out_color = color_sampled;
 }
